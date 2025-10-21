@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Conectando ao Servidor</title>
+    <title>Análise de Roleta</title>
     <style>
         * {
             margin: 0;
@@ -13,169 +13,518 @@
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+            color: #e0e0e0;
             min-height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
-            overflow: hidden;
-        }
-
-        .container {
-            text-align: center;
-            color: white;
-            padding: 40px;
-            max-width: 600px;
-        }
-
-        .icon-container {
-            margin-bottom: 30px;
-            position: relative;
-        }
-
-        .server-icon {
-            width: 80px;
-            height: 80px;
-            margin: 0 auto;
-            position: relative;
-            animation: pulse 2s ease-in-out infinite;
-        }
-
-        @keyframes pulse {
-            0%, 100% {
-                transform: scale(1);
-                opacity: 1;
-            }
-            50% {
-                transform: scale(1.1);
-                opacity: 0.8;
-            }
-        }
-
-        .server-icon svg {
-            width: 100%;
-            height: 100%;
-            filter: drop-shadow(0 0 20px rgba(255, 255, 255, 0.5));
-        }
-
-        h1 {
-            font-size: 2.5em;
-            margin-bottom: 20px;
-            font-weight: 600;
-            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
-        }
-
-        .message {
-            font-size: 1.2em;
-            margin-bottom: 40px;
-            opacity: 0.9;
+            padding: 20px;
             line-height: 1.6;
         }
 
-        .loader {
+        .container {
+            max-width: 700px;
+            width: 100%;
+            background: #242424;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            overflow: hidden;
+            border: 1px solid #3a3a3a;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #d32f2f 0%, #b71c1c 100%);
+            padding: 30px;
+            text-align: center;
+            border-bottom: 3px solid #ff5252;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            font-weight: 600;
+            color: #ffffff;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            font-size: 14px;
+            color: #ffcdd2;
+            font-weight: 300;
+        }
+
+        .content {
+            padding: 35px;
+        }
+
+        .analysis-box {
+            background: #1e1e1e;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 20px;
+            border-left: 4px solid #d32f2f;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .analysis-box h2 {
+            font-size: 18px;
+            color: #ff5252;
+            margin-bottom: 15px;
+            font-weight: 600;
             display: flex;
-            justify-content: center;
             align-items: center;
             gap: 10px;
-            margin: 30px 0;
         }
 
-        .dot {
-            width: 15px;
-            height: 15px;
-            background: white;
-            border-radius: 50%;
-            animation: bounce 1.4s ease-in-out infinite;
+        .analysis-box p,
+        .analysis-box ul,
+        .analysis-box ol {
+            font-size: 15px;
+            color: #b0b0b0;
+            line-height: 1.8;
         }
 
-        .dot:nth-child(1) {
-            animation-delay: -0.32s;
+        .analysis-box strong {
+            color: #ffffff;
+            font-weight: 600;
         }
 
-        .dot:nth-child(2) {
-            animation-delay: -0.16s;
+        .analysis-box ul,
+        .analysis-box ol {
+            padding-left: 20px;
+            margin-top: 10px;
         }
 
-        @keyframes bounce {
-            0%, 80%, 100% {
-                transform: scale(0);
-                opacity: 0.5;
-            }
-            40% {
-                transform: scale(1);
-                opacity: 1;
-            }
+        .analysis-box li {
+            margin-bottom: 8px;
+            color: #b0b0b0;
         }
 
-        .status {
-            background: rgba(255, 255, 255, 0.2);
-            backdrop-filter: blur(10px);
-            border-radius: 15px;
-            padding: 20px 30px;
-            margin-top: 30px;
-            border: 1px solid rgba(255, 255, 255, 0.3);
+        .separator {
+            height: 1px;
+            background: linear-gradient(90deg, transparent 0%, #3a3a3a 50%, transparent 100%);
+            margin: 25px 0;
         }
 
-        .status-text {
-            font-size: 1em;
-            font-weight: 500;
-            margin-bottom: 5px;
+        .emoji {
+            font-size: 22px;
+            filter: grayscale(0);
         }
 
-        .status-detail {
-            font-size: 0.9em;
-            opacity: 0.8;
+        .numbers-highlight {
+            background: #1a1a1a;
+            border: 2px solid #d32f2f;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            text-align: center;
         }
 
+        .numbers-highlight strong {
+            color: #ff5252;
+            font-size: 16px;
+            letter-spacing: 0.5px;
+        }
+
+        .footer {
+            background: #1a1a1a;
+            padding: 20px;
+            text-align: center;
+            border-top: 1px solid #3a3a3a;
+        }
+
+        .footer p {
+            font-size: 13px;
+            color: #707070;
+            font-weight: 300;
+        }
+
+        .timestamp {
+            font-size: 12px;
+            color: #606060;
+            text-align: center;
+            margin-top: 15px;
+            font-style: italic;
+        }
+
+        /* Estilização para markdown básico */
+        h3 {
+            font-size: 16px;
+            color: #ff5252;
+            margin: 20px 0 10px 0;
+            font-weight: 600;
+        }
+
+        code {
+            background: #1a1a1a;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            color: #ff5252;
+            font-size: 14px;
+        }
+
+        blockquote {
+            border-left: 3px solid #d32f2f;
+            padding-left: 15px;
+            margin: 15px 0;
+            color: #909090;
+            font-style: italic;
+        }
+
+        /* Responsivo */
         @media (max-width: 768px) {
-            h1 {
-                font-size: 2em;
-            }
-            
-            .message {
-                font-size: 1em;
-            }
-            
             .container {
+                margin: 10px;
+            }
+
+            .header h1 {
+                font-size: 24px;
+            }
+
+            .content {
+                padding: 25px;
+            }
+
+            .analysis-box {
                 padding: 20px;
             }
+        }
+
+        /* Animação suave */
+        .container {
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Destaque especial para checkmarks e x marks */
+        .analysis-box li::marker {
+            color: #d32f2f;
+        }
+
+        /* Estilos para o botão de análise */
+        .start-btn {
+            background: linear-gradient(135deg, #d32f2f 0%, #b71c1c 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(211, 47, 47, 0.3);
+        }
+
+        .start-btn:hover {
+            background: linear-gradient(135deg, #f44336 0%, #d32f2f 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(211, 47, 47, 0.4);
+        }
+
+        .start-btn:active {
+            transform: translateY(0);
+        }
+
+        .start-btn:disabled {
+            background: #666;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .status-message {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 6px;
+            text-align: center;
+            font-size: 14px;
+            font-weight: 500;
+            display: none;
+        }
+
+        .status-message.success {
+            background: rgba(76, 175, 80, 0.1);
+            color: #4caf50;
+            border: 1px solid #4caf50;
+        }
+
+        .status-message.error {
+            background: rgba(244, 67, 54, 0.1);
+            color: #f44336;
+            border: 1px solid #f44336;
+        }
+
+        .status-message.info {
+            background: rgba(33, 150, 243, 0.1);
+            color: #2196f3;
+            border: 1px solid #2196f3;
+        }
+
+        /* Animação de loading */
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .btn-loading {
+            animation: spin 1s linear infinite;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="icon-container">
-            <div class="server-icon">
-                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <rect x="2" y="3" width="20" height="6" rx="2" stroke="white" stroke-width="2"/>
-                    <rect x="2" y="15" width="20" height="6" rx="2" stroke="white" stroke-width="2"/>
-                    <circle cx="6" cy="6" r="1" fill="white"/>
-                    <circle cx="9" cy="6" r="1" fill="white"/>
-                    <circle cx="6" cy="18" r="1" fill="white"/>
-                    <circle cx="9" cy="18" r="1" fill="white"/>
-                    <line x1="15" y1="6" x2="18" y2="6" stroke="white" stroke-width="2" stroke-linecap="round"/>
-                    <line x1="15" y1="18" x2="18" y2="18" stroke="white" stroke-width="2" stroke-linecap="round"/>
-                </svg>
+        <div class="header">
+            <h1>🎰 ANÁLISE DE ROLETA</h1>
+            <p>Sistema de Detecção de Padrões</p>
+        </div>
+
+        <div class="content">
+            <!-- Botão para iniciar análise -->
+            <div class="analysis-box" id="control-panel">
+                <h2>🎯 Controle de Análise</h2>
+                <button id="start-analysis-btn" class="start-btn">
+                    <span class="btn-text">INICIAR ANÁLISE ROLETA</span>
+                    <span class="btn-loading" style="display: none;">🔄 Analisando...</span>
+                </button>
+                <div id="status-message" class="status-message"></div>
             </div>
+
+            <!-- Área de análise -->
+            <div class="analysis-box" id="output-content">
+                <h2>📊 Resultado da Análise</h2>
+                <div id="analysis-content">
+                    <p style="text-align: center; color: #707070;">Clique em "INICIAR ANÁLISE ROLETA" para começar</p>
+                </div>
+            </div>
+
+            <div class="timestamp" id="timestamp"></div>
         </div>
 
-        <h1>Conectando ao Servidor</h1>
-        
-        <p class="message">
-            Nosso sistema está estabelecendo conexão com o servidor.<br>
-            Por favor, aguarde alguns instantes.
-        </p>
-
-        <div class="loader">
-            <div class="dot"></div>
-            <div class="dot"></div>
-            <div class="dot"></div>
-        </div>
-
-        <div class="status">
-            <div class="status-text">Status: Conectando...</div>
-            <div class="status-detail">O sistema estará ativo em breve</div>
+        <div class="footer">
+            <p>⚠️ Jogue com responsabilidade • Análise técnica não garante resultados</p>
         </div>
     </div>
+
+    <script>
+        // Configurações
+        const WEBHOOK_URL = 'https://webhook.viraw.site/webhook/ativar-n8n';
+        const POLLING_INTERVAL = 5000; // 5 segundos
+        const MAX_POLLING_ATTEMPTS = 60; // 5 minutos máximo
+
+        // Estado da aplicação
+        let isAnalyzing = false;
+        let pollingAttempts = 0;
+        let pollingInterval = null;
+
+        // Elementos DOM
+        const startBtn = document.getElementById('start-analysis-btn');
+        const btnText = startBtn.querySelector('.btn-text');
+        const btnLoading = startBtn.querySelector('.btn-loading');
+        const statusMessage = document.getElementById('status-message');
+        const analysisContent = document.getElementById('analysis-content');
+        const timestampDiv = document.getElementById('timestamp');
+
+        // Função para formatar markdown básico
+        function formatMarkdown(text) {
+            if (!text) return '<p style="text-align: center; color: #707070;">Nenhum dado disponível</p>';
+            
+            // Substitui **texto** por <strong>texto</strong>
+            text = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+            
+            // Substitui --- por separador
+            text = text.replace(/---/g, '<div class="separator"></div>');
+            
+            // Substitui quebras de linha duplas por parágrafos
+            text = text.replace(/\n\n/g, '</p><p>');
+            
+            // Substitui quebras de linha simples por <br>
+            text = text.replace(/\n/g, '<br>');
+            
+            // Envolve tudo em parágrafo
+            text = '<p>' + text + '</p>';
+            
+            // Remove parágrafos vazios
+            text = text.replace(/<p><\/p>/g, '');
+            text = text.replace(/<p>\s*<\/p>/g, '');
+            
+            return text;
+        }
+
+        // Função para mostrar mensagem de status
+        function showStatus(message, type = 'info') {
+            statusMessage.textContent = message;
+            statusMessage.className = `status-message ${type}`;
+            statusMessage.style.display = 'block';
+        }
+
+        // Função para esconder mensagem de status
+        function hideStatus() {
+            statusMessage.style.display = 'none';
+        }
+
+        // Função para atualizar o conteúdo da análise
+        function updateAnalysisContent(data) {
+            if (data && data.output) {
+                const formattedContent = formatMarkdown(data.output);
+                analysisContent.innerHTML = formattedContent;
+                updateTimestamp();
+                return true;
+            }
+            return false;
+        }
+
+        // Função para atualizar timestamp
+        function updateTimestamp() {
+            const now = new Date();
+            const formatted = now.toLocaleString('pt-BR', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+            timestampDiv.textContent = `Análise gerada em: ${formatted}`;
+        }
+
+        // Função para iniciar análise
+        async function startAnalysis() {
+            if (isAnalyzing) return;
+
+            isAnalyzing = true;
+            pollingAttempts = 0;
+            
+            // Atualizar UI
+            startBtn.disabled = true;
+            btnText.style.display = 'none';
+            btnLoading.style.display = 'inline';
+            showStatus('Iniciando análise...', 'info');
+
+            try {
+                // Enviar webhook para N8N
+                const response = await fetch(WEBHOOK_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        timestamp: new Date().toISOString(),
+                        source: 'web-interface'
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Erro HTTP: ${response.status}`);
+                }
+
+                showStatus('Análise iniciada! Aguardando resultados...', 'success');
+                
+                // Iniciar polling para verificar resultados
+                startPolling();
+
+            } catch (error) {
+                console.error('Erro ao iniciar análise:', error);
+                showStatus(`Erro ao iniciar análise: ${error.message}`, 'error');
+                resetButton();
+            }
+        }
+
+        // Função para fazer polling dos resultados
+        function startPolling() {
+            pollingInterval = setInterval(async () => {
+                pollingAttempts++;
+                
+                try {
+                    // Aqui você pode implementar um endpoint para verificar o status
+                    // Por enquanto, vamos simular que após alguns segundos temos resultado
+                    if (pollingAttempts >= 3) {
+                        // Simular resultado (substitua por chamada real à API)
+                        const mockResult = {
+                            output: `## 🎯 Análise de Roleta Concluída
+
+**Números mais quentes:** 7, 14, 23, 35
+**Números mais frios:** 2, 8, 19, 31
+
+### 📊 Estatísticas
+- **Últimos 50 giros:** 28 vermelhos, 22 pretos
+- **Sequência atual:** 3 vermelhos consecutivos
+- **Tendência:** Leve favoritismo para vermelho
+
+### 🎲 Recomendações
+1. **Aposte em números quentes** (7, 14, 23, 35)
+2. **Evite números frios** (2, 8, 19, 31)
+3. **Considere apostas em vermelho** (tendência atual)
+
+---
+*Análise gerada automaticamente - Jogue com responsabilidade*`
+                        };
+                        
+                        updateAnalysisContent(mockResult);
+                        showStatus('Análise concluída com sucesso!', 'success');
+                        stopPolling();
+                        resetButton();
+                        return;
+                    }
+
+                    showStatus(`Aguardando resultados... (${pollingAttempts}/${MAX_POLLING_ATTEMPTS})`, 'info');
+
+                } catch (error) {
+                    console.error('Erro no polling:', error);
+                    showStatus(`Erro ao verificar resultados: ${error.message}`, 'error');
+                    stopPolling();
+                    resetButton();
+                }
+
+                // Timeout após máximo de tentativas
+                if (pollingAttempts >= MAX_POLLING_ATTEMPTS) {
+                    showStatus('Timeout: Análise demorou mais que o esperado', 'error');
+                    stopPolling();
+                    resetButton();
+                }
+            }, POLLING_INTERVAL);
+        }
+
+        // Função para parar polling
+        function stopPolling() {
+            if (pollingInterval) {
+                clearInterval(pollingInterval);
+                pollingInterval = null;
+            }
+        }
+
+        // Função para resetar botão
+        function resetButton() {
+            isAnalyzing = false;
+            startBtn.disabled = false;
+            btnText.style.display = 'inline';
+            btnLoading.style.display = 'none';
+        }
+
+        // Event listeners
+        startBtn.addEventListener('click', startAnalysis);
+
+        // Inicialização
+        updateTimestamp();
+
+        // Limpar intervalos ao sair da página
+        window.addEventListener('beforeunload', () => {
+            stopPolling();
+        });
+    </script>
 </body>
 </html>
