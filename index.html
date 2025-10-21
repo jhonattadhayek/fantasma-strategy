@@ -331,6 +331,7 @@
         let isAnalyzing = false;
         let pollingAttempts = 0;
         let pollingInterval = null;
+        let currentRequestId = null;
 
         // Elementos DOM
         const startBtn = document.getElementById('start-analysis-btn');
@@ -403,12 +404,20 @@
             timestampDiv.textContent = `Análise gerada em: ${formatted}`;
         }
 
+        // Função para gerar um ID único por sessão/requisição
+        function generateRequestId() {
+            const rnd = Math.random().toString(36).slice(2);
+            const ts = Date.now().toString(36);
+            return `req_${ts}_${rnd}`;
+        }
+
         // Função para iniciar análise
         async function startAnalysis() {
             if (isAnalyzing) return;
 
             isAnalyzing = true;
             pollingAttempts = 0;
+            currentRequestId = generateRequestId();
             
             // Atualizar UI
             startBtn.disabled = true;
@@ -424,6 +433,7 @@
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({
+                        id: currentRequestId,
                         timestamp: new Date().toISOString(),
                         source: 'web-interface'
                     })
@@ -451,7 +461,9 @@
                 pollingAttempts++;
                 
                 try {
-                    const response = await fetch(ANALYSIS_API_URL, { cache: 'no-store' });
+                    const url = new URL(ANALYSIS_API_URL, window.location.origin);
+                    if (currentRequestId) url.searchParams.set('id', currentRequestId);
+                    const response = await fetch(url.toString(), { cache: 'no-store' });
 
                     if (response.status === 200) {
                         const data = await response.json();
@@ -484,7 +496,8 @@
         // Carrega a última análise ao abrir a página
         async function loadLastAnalysisOnStart() {
             try {
-                const res = await fetch(ANALYSIS_API_URL, { cache: 'no-store' });
+                // Não carrega nada globalmente para evitar vazamento entre usuários
+                return;
                 if (res.ok) {
                     const data = await res.json();
                     if (data && data.output) {
