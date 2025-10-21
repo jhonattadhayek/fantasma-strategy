@@ -325,6 +325,7 @@
         const WEBHOOK_URL = 'https://webhook.viraw.site/webhook/ativar-n8n';
         const POLLING_INTERVAL = 5000; // 5 segundos
         const MAX_POLLING_ATTEMPTS = 60; // 5 minutos máximo
+        const ANALYSIS_API_URL = '/api/analysis';
 
         // Estado da aplicação
         let isAnalyzing = false;
@@ -444,41 +445,23 @@
             }
         }
 
-        // Função para fazer polling dos resultados
+        // Função para fazer polling dos resultados (consulta a API do domínio)
         function startPolling() {
             pollingInterval = setInterval(async () => {
                 pollingAttempts++;
                 
                 try {
-                    // Aqui você pode implementar um endpoint para verificar o status
-                    // Por enquanto, vamos simular que após alguns segundos temos resultado
-                    if (pollingAttempts >= 3) {
-                        // Simular resultado (substitua por chamada real à API)
-                        const mockResult = {
-                            output: `## 🎯 Análise de Roleta Concluída
+                    const response = await fetch(ANALYSIS_API_URL, { cache: 'no-store' });
 
-**Números mais quentes:** 7, 14, 23, 35
-**Números mais frios:** 2, 8, 19, 31
-
-### 📊 Estatísticas
-- **Últimos 50 giros:** 28 vermelhos, 22 pretos
-- **Sequência atual:** 3 vermelhos consecutivos
-- **Tendência:** Leve favoritismo para vermelho
-
-### 🎲 Recomendações
-1. **Aposte em números quentes** (7, 14, 23, 35)
-2. **Evite números frios** (2, 8, 19, 31)
-3. **Considere apostas em vermelho** (tendência atual)
-
----
-*Análise gerada automaticamente - Jogue com responsabilidade*`
-                        };
-                        
-                        updateAnalysisContent(mockResult);
-                        showStatus('Análise concluída com sucesso!', 'success');
-                        stopPolling();
-                        resetButton();
-                        return;
+                    if (response.status === 200) {
+                        const data = await response.json();
+                        if (data && data.output) {
+                            updateAnalysisContent(data);
+                            showStatus('Análise concluída com sucesso!', 'success');
+                            stopPolling();
+                            resetButton();
+                            return;
+                        }
                     }
 
                     showStatus(`Aguardando resultados... (${pollingAttempts}/${MAX_POLLING_ATTEMPTS})`, 'info');
@@ -490,13 +473,25 @@
                     resetButton();
                 }
 
-                // Timeout após máximo de tentativas
                 if (pollingAttempts >= MAX_POLLING_ATTEMPTS) {
                     showStatus('Timeout: Análise demorou mais que o esperado', 'error');
                     stopPolling();
                     resetButton();
                 }
             }, POLLING_INTERVAL);
+        }
+
+        // Carrega a última análise ao abrir a página
+        async function loadLastAnalysisOnStart() {
+            try {
+                const res = await fetch(ANALYSIS_API_URL, { cache: 'no-store' });
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data && data.output) {
+                        updateAnalysisContent(data);
+                    }
+                }
+            } catch (_) {}
         }
 
         // Função para parar polling
@@ -519,6 +514,7 @@
         startBtn.addEventListener('click', startAnalysis);
 
         // Inicialização
+        loadLastAnalysisOnStart();
         updateTimestamp();
 
         // Limpar intervalos ao sair da página
