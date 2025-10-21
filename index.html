@@ -304,11 +304,11 @@
                 <div id="status-message" class="status-message"></div>
             </div>
 
-            <!-- Área de análise -->
+            <!-- Área informativa -->
             <div class="analysis-box" id="output-content">
-                <h2>📊 Resultado da Análise</h2>
+                <h2>📡 Disparo de Análise</h2>
                 <div id="analysis-content">
-                    <p style="text-align: center; color: #707070;">Clique em "INICIAR ANÁLISE ROLETA" para começar</p>
+                    <p style="text-align: center; color: #707070;">Esta página apenas inicia o fluxo no N8N via webhook. Não há retorno exibido aqui.</p>
                 </div>
             </div>
 
@@ -323,217 +323,74 @@
     <script>
         // Configurações
         const WEBHOOK_URL = 'https://webhook.viraw.site/webhook/ativar-n8n';
-        const POLLING_INTERVAL = 5000; // 5 segundos
-        const MAX_POLLING_ATTEMPTS = 60; // 5 minutos máximo
-        const ANALYSIS_API_URL = '/api/analysis';
+        const COOLDOWN_SECONDS = 5;
 
-        // Estado da aplicação
-        let isAnalyzing = false;
-        let pollingAttempts = 0;
-        let pollingInterval = null;
-        let currentRequestId = null;
+        // Estado
+        let isCoolingDown = false;
+        let cooldownInterval = null;
+        let cooldownRemaining = 0;
 
         // Elementos DOM
         const startBtn = document.getElementById('start-analysis-btn');
         const btnText = startBtn.querySelector('.btn-text');
-        const btnLoading = startBtn.querySelector('.btn-loading');
         const statusMessage = document.getElementById('status-message');
-        const analysisContent = document.getElementById('analysis-content');
         const timestampDiv = document.getElementById('timestamp');
 
-        // Função para formatar markdown básico
-        function formatMarkdown(text) {
-            if (!text) return '<p style="text-align: center; color: #707070;">Nenhum dado disponível</p>';
-            
-            // Substitui **texto** por <strong>texto</strong>
-            text = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-            
-            // Substitui --- por separador
-            text = text.replace(/---/g, '<div class="separator"></div>');
-            
-            // Substitui quebras de linha duplas por parágrafos
-            text = text.replace(/\n\n/g, '</p><p>');
-            
-            // Substitui quebras de linha simples por <br>
-            text = text.replace(/\n/g, '<br>');
-            
-            // Envolve tudo em parágrafo
-            text = '<p>' + text + '</p>';
-            
-            // Remove parágrafos vazios
-            text = text.replace(/<p><\/p>/g, '');
-            text = text.replace(/<p>\s*<\/p>/g, '');
-            
-            return text;
-        }
-
-        // Função para mostrar mensagem de status
         function showStatus(message, type = 'info') {
             statusMessage.textContent = message;
             statusMessage.className = `status-message ${type}`;
             statusMessage.style.display = 'block';
         }
 
-        // Função para esconder mensagem de status
-        function hideStatus() {
-            statusMessage.style.display = 'none';
-        }
-
-        // Função para atualizar o conteúdo da análise
-        function updateAnalysisContent(data) {
-            if (data && data.output) {
-                const formattedContent = formatMarkdown(data.output);
-                analysisContent.innerHTML = formattedContent;
-                updateTimestamp();
-                return true;
-            }
-            return false;
-        }
-
-        // Função para atualizar timestamp
-        function updateTimestamp() {
+        function updateLastActionTimestamp() {
             const now = new Date();
             const formatted = now.toLocaleString('pt-BR', {
-                day: '2-digit',
-                month: '2-digit',
-                year: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit',
-                second: '2-digit'
+                day: '2-digit', month: '2-digit', year: 'numeric',
+                hour: '2-digit', minute: '2-digit', second: '2-digit'
             });
-            timestampDiv.textContent = `Análise gerada em: ${formatted}`;
+            timestampDiv.textContent = `Última ação em: ${formatted}`;
         }
 
-        // Função para gerar um ID único por sessão/requisição
-        function generateRequestId() {
-            const rnd = Math.random().toString(36).slice(2);
-            const ts = Date.now().toString(36);
-            return `req_${ts}_${rnd}`;
-        }
-
-        // Função para iniciar análise
-        async function startAnalysis() {
-            if (isAnalyzing) return;
-
-            isAnalyzing = true;
-            pollingAttempts = 0;
-            currentRequestId = generateRequestId();
-            
-            // Atualizar UI
+        function startCooldown() {
+            isCoolingDown = true;
+            cooldownRemaining = COOLDOWN_SECONDS;
             startBtn.disabled = true;
-            btnText.style.display = 'none';
-            btnLoading.style.display = 'inline';
-            showStatus('Iniciando análise...', 'info');
+            btnText.textContent = `AGUARDE ${cooldownRemaining}s`;
+
+            cooldownInterval = setInterval(() => {
+                cooldownRemaining -= 1;
+                if (cooldownRemaining <= 0) {
+                    clearInterval(cooldownInterval);
+                    cooldownInterval = null;
+                    isCoolingDown = false;
+                    startBtn.disabled = false;
+                    btnText.textContent = 'INICIAR ANÁLISE ROLETA';
+                    return;
+                }
+                btnText.textContent = `AGUARDE ${cooldownRemaining}s`;
+            }, 1000);
+        }
+
+        async function startAnalysis() {
+            if (isCoolingDown) return;
+            showStatus('Disparando fluxo no N8N...', 'info');
+            startCooldown();
 
             try {
-                // Enviar webhook para N8N
-                const response = await fetch(WEBHOOK_URL, {
+                await fetch(WEBHOOK_URL, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        id: currentRequestId,
-                        timestamp: new Date().toISOString(),
-                        source: 'web-interface'
-                    })
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ timestamp: new Date().toISOString(), source: 'web-interface' })
                 });
-
-                if (!response.ok) {
-                    throw new Error(`Erro HTTP: ${response.status}`);
-                }
-
-                showStatus('Análise iniciada! Aguardando resultados...', 'success');
-                
-                // Iniciar polling para verificar resultados
-                startPolling();
-
+                updateLastActionTimestamp();
+                showStatus('Fluxo iniciado com sucesso no N8N.', 'success');
             } catch (error) {
-                console.error('Erro ao iniciar análise:', error);
-                showStatus(`Erro ao iniciar análise: ${error.message}`, 'error');
-                resetButton();
+                console.error('Erro ao acionar webhook:', error);
+                showStatus('Falha ao acionar o webhook. Tente novamente após o cooldown.', 'error');
             }
         }
 
-        // Função para fazer polling dos resultados (consulta a API do domínio)
-        function startPolling() {
-            pollingInterval = setInterval(async () => {
-                pollingAttempts++;
-                
-                try {
-                    const url = new URL(ANALYSIS_API_URL, window.location.origin);
-                    if (currentRequestId) url.searchParams.set('id', currentRequestId);
-                    const response = await fetch(url.toString(), { cache: 'no-store' });
-
-                    if (response.status === 200) {
-                        const data = await response.json();
-                        if (data && data.output) {
-                            updateAnalysisContent(data);
-                            showStatus('Análise concluída com sucesso!', 'success');
-                            stopPolling();
-                            resetButton();
-                            return;
-                        }
-                    }
-
-                    showStatus(`Aguardando resultados... (${pollingAttempts}/${MAX_POLLING_ATTEMPTS})`, 'info');
-
-                } catch (error) {
-                    console.error('Erro no polling:', error);
-                    showStatus(`Erro ao verificar resultados: ${error.message}`, 'error');
-                    stopPolling();
-                    resetButton();
-                }
-
-                if (pollingAttempts >= MAX_POLLING_ATTEMPTS) {
-                    showStatus('Timeout: Análise demorou mais que o esperado', 'error');
-                    stopPolling();
-                    resetButton();
-                }
-            }, POLLING_INTERVAL);
-        }
-
-        // Carrega a última análise ao abrir a página
-        async function loadLastAnalysisOnStart() {
-            try {
-                // Não carrega nada globalmente para evitar vazamento entre usuários
-                return;
-                if (res.ok) {
-                    const data = await res.json();
-                    if (data && data.output) {
-                        updateAnalysisContent(data);
-                    }
-                }
-            } catch (_) {}
-        }
-
-        // Função para parar polling
-        function stopPolling() {
-            if (pollingInterval) {
-                clearInterval(pollingInterval);
-                pollingInterval = null;
-            }
-        }
-
-        // Função para resetar botão
-        function resetButton() {
-            isAnalyzing = false;
-            startBtn.disabled = false;
-            btnText.style.display = 'inline';
-            btnLoading.style.display = 'none';
-        }
-
-        // Event listeners
         startBtn.addEventListener('click', startAnalysis);
-
-        // Inicialização
-        loadLastAnalysisOnStart();
-        updateTimestamp();
-
-        // Limpar intervalos ao sair da página
-        window.addEventListener('beforeunload', () => {
-            stopPolling();
-        });
     </script>
 </body>
 </html>

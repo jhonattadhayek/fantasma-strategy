@@ -35,71 +35,9 @@ function readJson(req) {
 }
 
 module.exports = async (req, res) => {
+  // Desativado: endpoint não é mais utilizado.
   setCors(res);
-  res.setHeader('Cache-Control', 'no-store');
-
-  if (req.method === 'OPTIONS') {
-    return res.status(204).end();
-  }
-
-  if (req.method === 'POST') {
-    try {
-      const body = typeof req.body === 'object' && req.body !== null ? req.body : await readJson(req);
-      const id = body.id || body.analysisId || body.requestId;
-      const { output, timestamp, status } = body || {};
-
-      if (!id) {
-        return res.status(400).json({ ok: false, error: 'Missing id in body (id/analysisId/requestId)' });
-      }
-
-      const normalizedOutput = typeof output === 'string' ? output : JSON.stringify(output ?? '');
-
-      results.set(id, {
-        output: normalizedOutput,
-        timestamp: timestamp || new Date().toISOString(),
-        status: status || 'completed',
-        createdAt: Date.now(),
-      });
-
-      // limpeza simples por TTL
-      const now = Date.now();
-      for (const [key, value] of results.entries()) {
-        if (now - (value.createdAt || now) > TTL_MS) results.delete(key);
-      }
-      // limite de entradas
-      if (results.size > MAX_ENTRIES) {
-        const oldestKey = [...results.entries()].sort((a, b) => (a[1].createdAt || 0) - (b[1].createdAt || 0))[0]?.[0];
-        if (oldestKey) results.delete(oldestKey);
-      }
-
-      return res.status(200).json({ ok: true, id });
-    } catch (e) {
-      return res.status(400).json({ ok: false, error: 'Invalid JSON body' });
-    }
-  }
-
-  if (req.method === 'GET') {
-    try {
-      const url = new URL(req.url, 'http://localhost');
-      const id = url.searchParams.get('id') || url.searchParams.get('analysisId') || url.searchParams.get('requestId');
-      if (!id) return res.status(204).end();
-
-      const record = results.get(id);
-      if (!record) return res.status(204).end();
-
-      if (Date.now() - (record.createdAt || 0) > TTL_MS) {
-        results.delete(id);
-        return res.status(204).end();
-      }
-
-      return res.status(200).json(record);
-    } catch (_) {
-      return res.status(400).json({ ok: false, error: 'Bad request' });
-    }
-  }
-
-  res.setHeader('Allow', 'GET, POST, OPTIONS');
-  return res.status(405).end('Method Not Allowed');
+  return res.status(410).json({ ok: false, error: 'Endpoint disabled' });
 };
 
 
